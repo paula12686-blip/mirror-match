@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#2d0a0a">
+<meta name="description" content="Mirror Match - Bilingual EN/ES palindrome game by ROMA ES AMOR">
+<title>Mirror Match · ROMA ES AMOR</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; width: 100%; overflow: hidden; overscroll-behavior: none; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: radial-gradient(ellipse at top, #4a0d12 0%, #2d0a0a 50%, #1a0505 100%);
+    color: #faf0e6;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  #game {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    text-align: center;
+  }
+  .screen.hidden { display: none; }
+
+  /* ── Title brand ─────────────────────────────────────────── */
+  .brand-title {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(2.4rem, 9vw, 4rem);
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: #faf0e6;
+    text-shadow: 0 2px 20px rgba(212, 175, 55, 0.4);
+    margin-bottom: 0.3em;
+  }
+  .brand-tag {
+    font-family: Georgia, serif;
+    font-size: clamp(0.85rem, 3vw, 1.1rem);
+    letter-spacing: 0.5em;
+    color: #d4af37;
+    margin-bottom: 1.5em;
+    text-transform: uppercase;
+  }
+  .brand-tag::before, .brand-tag::after {
+    content: "✦";
+    margin: 0 0.6em;
+    color: #d4af37;
+    opacity: 0.6;
+  }
+  .tagline {
+    font-size: clamp(0.95rem, 3.5vw, 1.15rem);
+    line-height: 1.5;
+    color: #faf0e6;
+    opacity: 0.9;
+    margin-bottom: 0.4em;
+  }
+  .tagline-es {
+    font-size: clamp(0.85rem, 3vw, 1rem);
+    line-height: 1.5;
+    color: #e8b4b8;
+    margin-bottom: 2em;
+    font-style: italic;
+  }
+
+  /* ── Buttons / Selectors ─────────────────────────────────── */
+  .lang-row, .button-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .lang-btn {
+    background: rgba(250, 240, 230, 0.08);
+    color: #faf0e6;
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    border-radius: 999px;
+    padding: 10px 22px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 44px;
+  }
+  .lang-btn.active {
+    background: #d4af37;
+    color: #2d0a0a;
+    border-color: #d4af37;
+    box-shadow: 0 4px 14px rgba(212, 175, 55, 0.4);
+  }
+  .play-btn {
+    background: linear-gradient(135deg, #c41e3a 0%, #8B0000 100%);
+    color: #faf0e6;
+    border: none;
+    border-radius: 999px;
+    padding: 16px 48px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    margin-top: 6px;
+    box-shadow: 0 6px 20px rgba(196, 30, 58, 0.5);
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
+    min-height: 52px;
+  }
+  .play-btn:active { transform: scale(0.96); box-shadow: 0 3px 10px rgba(196, 30, 58, 0.4); }
+
+  .secondary-btn {
+    background: transparent;
+    color: #faf0e6;
+    border: 1px solid rgba(250, 240, 230, 0.3);
+    border-radius: 999px;
+    padding: 12px 30px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+    min-height: 44px;
+  }
+
+  .rules {
+    margin-top: 28px;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    opacity: 0.7;
+    max-width: 360px;
+  }
+  .rules strong { color: #d4af37; }
+
+  /* ── HUD ─────────────────────────────────────────────────── */
+  .hud {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(180deg, rgba(26,5,5,0.9) 0%, rgba(26,5,5,0) 100%);
+    z-index: 10;
+    pointer-events: none;
+  }
+  .hud-item {
+    background: rgba(45, 10, 10, 0.7);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    backdrop-filter: blur(4px);
+  }
+  .hud-item .label { opacity: 0.7; margin-right: 4px; }
+  .hud-item .value { color: #d4af37; }
+  .hud-item.lives .value { color: #e8b4b8; }
+  #pause-btn {
+    pointer-events: auto;
+    background: rgba(45, 10, 10, 0.7);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    color: #faf0e6;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+
+  /* ── Play area & tiles ───────────────────────────────────── */
+  #play-area {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+  .tile {
+    position: absolute;
+    background: linear-gradient(135deg, #faf0e6 0%, #f5e6d3 100%);
+    color: #2d0a0a;
+    padding: 12px 18px;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    border: 2px solid #d4af37;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+    cursor: pointer;
+    white-space: nowrap;
+    transform: translate(-50%, 0);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    will-change: top;
+    letter-spacing: 0.03em;
+  }
+  .tile.lang-en { border-color: #d4af37; }
+  .tile.lang-es { border-color: #e8b4b8; }
+  .tile.lang-num { border-color: #faf0e6; background: linear-gradient(135deg, #2d0a0a 0%, #4a0d12 100%); color: #faf0e6; }
+  .tile.popped {
+    transform: translate(-50%, 0) scale(1.4);
+    opacity: 0;
+  }
+  .tile.shake {
+    animation: shake 0.3s ease;
+  }
+  @keyframes shake {
+    0%,100% { transform: translate(-50%, 0); }
+    25% { transform: translate(-55%, 0); }
+    75% { transform: translate(-45%, 0); }
+  }
+  .floater {
+    position: absolute;
+    color: #d4af37;
+    font-weight: 800;
+    font-size: 1.4rem;
+    pointer-events: none;
+    animation: floatUp 1s ease forwards;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+  }
+  .floater.miss { color: #e8b4b8; }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translate(-50%, 0) scale(0.8); }
+    100% { opacity: 0; transform: translate(-50%, -60px) scale(1.2); }
+  }
+
+  /* ── End screen ──────────────────────────────────────────── */
+  .end-title {
+    font-family: Georgia, serif;
+    font-size: clamp(2rem, 7vw, 3rem);
+    color: #d4af37;
+    margin-bottom: 0.2em;
+  }
+  .end-row {
+    margin: 0.4em 0;
+    font-size: 1rem;
+    opacity: 0.9;
+  }
+  .end-row .num {
+    color: #d4af37;
+    font-weight: 800;
+    font-size: 1.25rem;
+  }
+  .end-row.best { color: #e8b4b8; }
+  .new-best {
+    display: inline-block;
+    background: #d4af37;
+    color: #2d0a0a;
+    font-weight: 800;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-left: 6px;
+    animation: pulse 1.4s ease infinite;
+  }
+  @keyframes pulse {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
+
+  /* ── Pause overlay ───────────────────────────────────────── */
+  #pause-screen {
+    background: rgba(26, 5, 5, 0.9);
+    backdrop-filter: blur(6px);
+    z-index: 20;
+  }
+
+  /* ── Footer ─────────────────────────────────────────────── */
+  .footer-mark {
+    position: absolute;
+    bottom: 14px;
+    left: 0; right: 0;
+    text-align: center;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    color: #d4af37;
+    opacity: 0.6;
+    text-transform: uppercase;
+    font-family: Georgia, serif;
+  }
+</style>
+</head>
+<body>
+<div id="game">
+
+  <!-- ═══ START SCREEN ═══ -->
+  <div id="start-screen" class="screen">
+    <div class="brand-title">MIRROR MATCH</div>
+    <div class="brand-tag">Roma es amor</div>
+    <p class="tagline">Tap the words and numbers that read the same forwards and backwards.</p>
+    <p class="tagline-es">Toca las palabras y números que se leen igual al derecho y al revés.</p>
+
+    <div class="lang-row" id="lang-select">
+      <button class="lang-btn" data-lang="en">EN</button>
+      <button class="lang-btn active" data-lang="both">EN + ES</button>
+      <button class="lang-btn" data-lang="es">ES</button>
+    </div>
+
+    <button class="play-btn" id="start-btn">▶ PLAY · JUGAR</button>
+
+    <div class="rules">
+      <strong>+10</strong> for each palindrome you tap.<br>
+      <strong>−1 ♥</strong> for tapping a non-palindrome or letting one fall.<br>
+      <em>3 ♥ to start. Speed grows with your score.</em>
+    </div>
+
+    <div class="footer-mark">Roma es amor for education</div>
+  </div>
+
+  <!-- ═══ GAME SCREEN ═══ -->
+  <div id="game-screen" class="screen hidden" style="padding: 0;">
+    <div class="hud">
+      <div class="hud-item"><span class="label">SCORE</span><span class="value" id="score">0</span></div>
+      <div class="hud-item"><span class="label">LV</span><span class="value" id="level">1</span></div>
+      <div class="hud-item lives">♥ <span class="value" id="lives">3</span></div>
+      <button id="pause-btn" aria-label="Pause">⏸</button>
+    </div>
+    <div id="play-area"></div>
+  </div>
+
+  <!-- ═══ PAUSE OVERLAY ═══ -->
+  <div id="pause-screen" class="screen hidden">
+    <div class="brand-title" style="font-size: 2.2rem;">PAUSED</div>
+    <div class="brand-tag">en pausa</div>
+    <button class="play-btn" id="resume-btn">▶ RESUME · CONTINUAR</button>
+    <button class="secondary-btn" id="quit-btn">EXIT · SALIR</button>
+  </div>
+
+  <!-- ═══ END SCREEN ═══ -->
+  <div id="end-screen" class="screen hidden">
+    <div class="end-title">GAME OVER</div>
+    <div class="brand-tag">Fin de la partida</div>
+    <div class="end-row">Final score · Puntuación final<br><span class="num" id="final-score">0</span></div>
+    <div class="end-row best">Best · Mejor<br><span class="num" id="best-score">0</span><span id="new-best-badge" class="new-best hidden">NEW · NUEVO</span></div>
+    <button class="play-btn" id="restart-btn" style="margin-top: 24px;">↻ PLAY AGAIN · OTRA VEZ</button>
+    <button class="secondary-btn" id="menu-btn">MENU · MENÚ</button>
+    <div class="footer-mark">Roma es amor for education</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  // ─────────────────────────────────────────────────────────
+  //  CONTENT BANKS
+  // ─────────────────────────────────────────────────────────
+  const PAL = {
+    en: ['LEVEL','RADAR','CIVIC','KAYAK','MADAM','NOON','REFER','MOM','DAD','POP','EYE','DID','DEED','PEEP','SEES','SOLOS','TENET','ROTOR','STATS','WOW','RACECAR','BOB','GAG','NUN','TOOT','PUP','BIB'],
+    es: ['OSO','ANA','SOMETEMOS','ANILINA','RECONOCER','RADAR','SALAS','SOMOS','AREPERA','RAJAR','RALLAR','ORO','AJA','OJO','NADAN','SENOS','ASA','EME','ESE','RECONOCER','SAS']
+  };
+  const NUM_PAL = ['11','22','33','44','55','66','77','88','99','101','111','121','131','141','151','181','202','212','232','252','272','303','343','414','454','525','626','737','848','959','1001','1111','1221','1331','1441','12321','45654','98789'];
+
+  const DECOY = {
+    en: ['HOUSE','WORLD','TABLE','MUSIC','DANCE','SMILE','WATER','PHONE','HAPPY','PEACE','DREAM','OCEAN','LIGHT','SWEET','MAGIC','CLOUD','TIGER','MONEY','BRAVE','PLANT','FRIEND','BOOK','LOVE','SUN','STAR','HEART','TRUE','OPEN','TRUST','MIRROR'],
+    es: ['CASA','MUNDO','MESA','BAILE','SONRISA','AGUA','TELEFONO','FELIZ','PAZ','SUENO','VENTANA','LIBRO','JARDIN','CAFE','OFICINA','LUNA','TIGRE','DINERO','VALIENTE','PLANTA','AMIGO','SOL','ESTRELLA','CORAZON','VERDAD','ABRIR','CONFIA','ESPEJO','AMOR','BUENO']
+  };
+  const NUM_DECOY = ['12','13','14','23','24','25','34','35','45','56','67','78','89','123','145','234','267','345','456','567','678','789','1234','5678','6789','9012','5432','7890','1357','2468'];
+
+  // ─────────────────────────────────────────────────────────
+  //  PALINDROME CHECK (with diacritic normalization for ES)
+  // ─────────────────────────────────────────────────────────
+  function isPalindrome(str){
+    const clean = str.toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]/g, '');
+    return clean.length > 1 && clean === clean.split('').reverse().join('');
+  }
+
+  // ─────────────────────────────────────────────────────────
+  //  GAME STATE
+  // ─────────────────────────────────────────────────────────
+  const STATE = {
+    score: 0,
+    level: 1,
+    lives: 3,
+    speed: 1.4,         // pixels per frame
+    spawnInterval: 1900, // ms
+    minSpawn: 700,
+    maxSpeed: 5.0,
+    palRatio: 0.55,
+    lang: 'both',
+    tiles: [],
+    nextSpawn: 0,
+    lastFrame: 0,
+    running: false,
+    paused: false,
+    rafId: 0
+  };
+
+  function readBest(){
+    try { return parseInt(localStorage.getItem('mm-best') || '0', 10) || 0; }
+    catch(e){ return 0; }
+  }
+  function writeBest(v){
+    try { localStorage.setItem('mm-best', String(v)); } catch(e){}
+  }
+
+  // ─────────────────────────────────────────────────────────
+  //  DOM
+  // ─────────────────────────────────────────────────────────
+  const $ = (id) => document.getElementById(id);
+  const startScreen = $('start-screen');
+  const gameScreen = $('game-screen');
+  const pauseScreen = $('pause-screen');
+  const endScreen = $('end-screen');
+  const playArea = $('play-area');
+  const scoreEl = $('score');
+  const levelEl = $('level');
+  const livesEl = $('lives');
+  const finalScoreEl = $('final-score');
+  const bestScoreEl = $('best-score');
+  const newBestBadge = $('new-best-badge');
+
+  function show(el){ el.classList.remove('hidden'); }
+  function hide(el){ el.classList.add('hidden'); }
+
+  // ─────────────────────────────────────────────────────────
+  //  TILE LIFECYCLE
+  // ─────────────────────────────────────────────────────────
+  function pickWord(){
+    const r = Math.random();
+    const wantPal = r < STATE.palRatio;
+
+    // 30% chance to pick a number, otherwise word
+    const useNumber = Math.random() < 0.30;
+
+    let txt, langClass;
+    if (useNumber){
+      const list = wantPal ? NUM_PAL : NUM_DECOY;
+      txt = list[Math.floor(Math.random() * list.length)];
+      langClass = 'lang-num';
+    } else {
+      let lang = STATE.lang;
+      if (lang === 'both') lang = Math.random() < 0.5 ? 'en' : 'es';
+      const list = wantPal ? PAL[lang] : DECOY[lang];
+      txt = list[Math.floor(Math.random() * list.length)];
+      langClass = 'lang-' + lang;
+    }
+    return { txt, langClass, isPal: isPalindrome(txt) };
+  }
+
+  function spawnTile(){
+    const { txt, langClass, isPal } = pickWord();
+    const el = document.createElement('div');
+    el.className = 'tile ' + langClass;
+    el.textContent = txt;
+
+    // Random horizontal position (with margin so tile fits)
+    const areaW = playArea.clientWidth;
+    const margin = 70;
+    const x = margin + Math.random() * (areaW - margin*2);
+    el.style.left = x + 'px';
+    el.style.top = '-50px';
+
+    const tile = { el, x, y: -50, isPal, alive: true, popped: false };
+    el.addEventListener('click', (e) => onTileTap(tile, e), { passive: true });
+    el.addEventListener('touchstart', (e) => { e.preventDefault(); onTileTap(tile, e); }, { passive: false });
+    playArea.appendChild(el);
+    STATE.tiles.push(tile);
+  }
+
+  function onTileTap(tile, evt){
+    if (!tile.alive || STATE.paused) return;
+    tile.alive = false;
+    tile.popped = true;
+    if (tile.isPal){
+      addScore(10 * STATE.level, tile.x, tile.y, '+' + (10 * STATE.level));
+      tile.el.classList.add('popped');
+      setTimeout(() => tile.el.remove(), 200);
+    } else {
+      loseLife();
+      tile.el.classList.add('shake');
+      showFloater('−♥', tile.x, tile.y, true);
+      setTimeout(() => {
+        tile.el.classList.add('popped');
+        setTimeout(() => tile.el.remove(), 200);
+      }, 250);
+    }
+  }
+
+  function showFloater(text, x, y, miss){
+    const f = document.createElement('div');
+    f.className = 'floater' + (miss ? ' miss' : '');
+    f.textContent = text;
+    f.style.left = x + 'px';
+    f.style.top = y + 'px';
+    playArea.appendChild(f);
+    setTimeout(() => f.remove(), 1000);
+  }
+
+  function addScore(points, x, y, label){
+    STATE.score += points;
+    scoreEl.textContent = STATE.score;
+    showFloater(label, x, y, false);
+    // Level up every 100 points
+    const newLevel = 1 + Math.floor(STATE.score / 100);
+    if (newLevel !== STATE.level){
+      STATE.level = newLevel;
+      levelEl.textContent = STATE.level;
+      // Ramp difficulty
+      STATE.speed = Math.min(STATE.maxSpeed, 1.4 + (STATE.level - 1) * 0.35);
+      STATE.spawnInterval = Math.max(STATE.minSpawn, 1900 - (STATE.level - 1) * 130);
+      STATE.palRatio = Math.max(0.30, 0.55 - (STATE.level - 1) * 0.025);
+    }
+  }
+
+  function loseLife(){
+    STATE.lives--;
+    livesEl.textContent = STATE.lives;
+    if (STATE.lives <= 0) endGame();
+  }
+
+  // ─────────────────────────────────────────────────────────
+  //  GAME LOOP
+  // ─────────────────────────────────────────────────────────
+  function loop(ts){
+    if (!STATE.running) return;
+    if (STATE.paused){ STATE.rafId = requestAnimationFrame(loop); return; }
+
+    const dt = ts - STATE.lastFrame;
+    STATE.lastFrame = ts;
+
+    // Spawn
+    STATE.nextSpawn -= dt;
+    if (STATE.nextSpawn <= 0){
+      spawnTile();
+      STATE.nextSpawn = STATE.spawnInterval;
+    }
+
+    const areaH = playArea.clientHeight;
+    const advance = STATE.speed * (dt / 16.67); // normalize to 60fps
+
+    for (let i = STATE.tiles.length - 1; i >= 0; i--){
+      const t = STATE.tiles[i];
+      if (!t.alive){ STATE.tiles.splice(i, 1); continue; }
+      t.y += advance;
+      t.el.style.top = t.y + 'px';
+      if (t.y > areaH + 30){
+        // off-screen
+        if (t.isPal){
+          // missed a palindrome
+          loseLife();
+          showFloater('MISS', t.x, areaH - 80, true);
+        }
+        t.alive = false;
+        t.el.remove();
+        STATE.tiles.splice(i, 1);
+      }
+    }
+
+    STATE.rafId = requestAnimationFrame(loop);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  //  GAME CONTROLS
+  // ─────────────────────────────────────────────────────────
+  function startGame(){
+    STATE.score = 0; STATE.level = 1; STATE.lives = 3;
+    STATE.speed = 1.4; STATE.spawnInterval = 1900; STATE.palRatio = 0.55;
+    STATE.tiles = []; STATE.nextSpawn = 800; STATE.running = true; STATE.paused = false;
+    STATE.lastFrame = performance.now();
+
+    scoreEl.textContent = '0';
+    levelEl.textContent = '1';
+    livesEl.textContent = '3';
+    playArea.innerHTML = '';
+
+    hide(startScreen); hide(endScreen); hide(pauseScreen);
+    show(gameScreen);
+
+    cancelAnimationFrame(STATE.rafId);
+    STATE.rafId = requestAnimationFrame(loop);
+  }
+
+  function pauseGame(){
+    if (!STATE.running) return;
+    STATE.paused = true;
+    show(pauseScreen);
+  }
+  function resumeGame(){
+    STATE.paused = false;
+    STATE.lastFrame = performance.now();
+    hide(pauseScreen);
+  }
+  function quitToMenu(){
+    STATE.running = false;
+    STATE.paused = false;
+    cancelAnimationFrame(STATE.rafId);
+    playArea.innerHTML = '';
+    hide(gameScreen); hide(pauseScreen); hide(endScreen);
+    show(startScreen);
+  }
+  function endGame(){
+    STATE.running = false;
+    cancelAnimationFrame(STATE.rafId);
+    finalScoreEl.textContent = STATE.score;
+    const prevBest = readBest();
+    const isNewBest = STATE.score > prevBest;
+    if (isNewBest) writeBest(STATE.score);
+    bestScoreEl.textContent = Math.max(prevBest, STATE.score);
+    newBestBadge.classList.toggle('hidden', !isNewBest);
+    hide(gameScreen); hide(pauseScreen);
+    show(endScreen);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  //  EVENT WIRING
+  // ─────────────────────────────────────────────────────────
+  // Language picker
+  document.querySelectorAll('#lang-select .lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#lang-select .lang-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      STATE.lang = btn.dataset.lang;
+    });
+  });
+
+  $('start-btn').addEventListener('click', startGame);
+  $('restart-btn').addEventListener('click', startGame);
+  $('menu-btn').addEventListener('click', quitToMenu);
+  $('pause-btn').addEventListener('click', pauseGame);
+  $('resume-btn').addEventListener('click', resumeGame);
+  $('quit-btn').addEventListener('click', quitToMenu);
+
+  // Pause on tab hide
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && STATE.running && !STATE.paused) pauseGame();
+  });
+
+  // Prevent pinch-zoom / double-tap zoom
+  document.addEventListener('gesturestart', e => e.preventDefault());
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 300) e.preventDefault();
+    lastTouchEnd = now;
+  }, { passive: false });
+
+})();
+</script>
+</body>
+</html>
